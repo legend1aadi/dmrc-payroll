@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DMRC Payroll Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+/* ── RESET & BASE ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Nunito', system-ui, sans-serif; background: #f1f5f9; color: #1e293b; }
+button { cursor: pointer; font-family: inherit; }
+input, select { font-family: inherit; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: rgba(0,31,63,.35); border-radius: 99px; }
+
+/* ── CSS VARIABLES ────────────────────────────────────── */
+:root {
+  --navy:  #001f3f;
+  --navy2: #003366;
+  --navy3: #0056b3;
+  --white: #ffffff;
+  --bg:    #f1f5f9;
+  --border:#e2e8f0;
+  --muted: #94a3b8;
+  --text:  #1e293b;
+  --text2: #475569;
+  --radius:14px;
+  --shadow: 0 2px 12px rgba(0,0,0,.07);
+  --shadow-lg: 0 6px 28px rgba(0,0,0,.12);
+  --sidebar-w: 240px;
+}
+
+/* ── LAYOUT ───────────────────────────────────────────── */
+.app          { display: flex; height: 100vh; overflow: hidden; }
+.sidebar      {
+  width: var(--sidebar-w); flex-shrink: 0; display: flex; flex-direction: column;
+  background: linear-gradient(180deg,#001f3f 0%,#002850 55%,#001220 100%);
+  box-shadow: 4px 0 24px rgba(0,0,0,.3); z-index: 50; transition: transform .3s;
+}
+.main         { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.topbar       {
+  background: var(--white); border-bottom: 1px solid var(--border);
+  padding: 14px 28px; display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; box-shadow: 0 1px 8px rgba(0,0,0,.06);
+}
+.content      { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+/* ── SIDEBAR BRAND ────────────────────────────────────── */
+.sb-brand     { padding: 22px 18px 18px; border-bottom: 1px solid rgba(255,255,255,.1); }
+.sb-brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.sb-icon      {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: rgba(255,255,255,.1); display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0;
+}
+.sb-icon svg  { width: 20px; height: 20px; color: #93c5fd; }
+.sb-title     { font-size: 17px; font-weight: 900; color: #fff; letter-spacing: 1px; line-height: 1; }
+.sb-subtitle  { font-size: 9px; color: rgba(147,197,253,.7); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
+.sb-status    { background: rgba(255,255,255,.06); border-radius: 10px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
+.sb-dot       { width: 8px; height: 8px; border-radius: 50%; background: #34d399; flex-shrink: 0; }
+.sb-status-txt{ font-size: 11px; color: rgba(255,255,255,.45); font-weight: 700; }
+
+/* ── SIDEBAR NAV ──────────────────────────────────────── */
+.sb-nav       { flex: 1; padding: 16px 10px; display: flex; flex-direction: column; gap: 3px; overflow-y: auto; }
+.nav-btn      {
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: 12px; border: none;
+  font-size: 11px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase;
+  background: transparent; color: rgba(255,255,255,.45); text-align: left;
+  transition: all .18s;
+}
+.nav-btn:hover   { background: rgba(255,255,255,.1); color: #fff; }
+.nav-btn.active  { background: #fff; color: #0f172a; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+.nav-btn.active svg { color: #1d4ed8; }
+.nav-btn svg     { width: 16px; height: 16px; flex-shrink: 0; }
+.nav-chevron     { margin-left: auto; width: 14px; height: 14px; opacity: .5; }
+
+/* ── SIDEBAR FOOTER ───────────────────────────────────── */
+.sb-footer    { padding: 10px 10px 18px; border-top: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; gap: 2px; }
+.sb-foot-btn  {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; border-radius: 10px; border: none;
+  font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+  background: transparent; color: rgba(255,255,255,.3); transition: all .18s;
+}
+.sb-foot-btn svg       { width: 14px; height: 14px; }
+.sb-foot-btn:hover     { background: rgba(255,255,255,.08); color: rgba(255,255,255,.8); }
+.sb-foot-btn.danger:hover{ background: rgba(239,68,68,.15); color: #fca5a5; }
+
+/* ── TOPBAR ───────────────────────────────────────────── */
+.tb-left      { display: flex; align-items: center; gap: 14px; }
+.tb-title     { font-size: 18px; font-weight: 900; color: #0f172a; letter-spacing: 1px; text-transform: uppercase; line-height: 1; }
+.tb-sub       { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 3px; }
+.tb-right     { display: flex; align-items: center; gap: 10px; }
+.tb-bell      {
+  position: relative; width: 36px; height: 36px; border-radius: 10px;
+  background: var(--bg); border: none; display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.tb-bell:hover { background: var(--border); }
+.tb-bell svg  { width: 16px; height: 16px; color: var(--text2); }
+.tb-bell-dot  { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; border: 2px solid #fff; }
+.tb-user      { display: flex; align-items: center; gap: 10px; padding-left: 12px; border-left: 1px solid var(--border); }
+.tb-avatar    {
+  width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 12px; font-weight: 900;
+  background: linear-gradient(135deg, #001f3f, #0056b3);
+}
+.tb-uname     { font-size: 13px; font-weight: 900; color: #0f172a; line-height: 1; }
+.tb-urole     { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+.mob-menu-btn {
+  display: none; width: 36px; height: 36px; border-radius: 10px;
+  background: var(--bg); border: none; align-items: center; justify-content: center;
+}
+.mob-menu-btn svg { width: 20px; height: 20px; color: var(--text2); }
+
+/* ── SCREENS ──────────────────────────────────────────── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── UTILITIES ────────────────────────────────────────── */
+.vstack   { display: flex; flex-direction: column; }
+.vstack-6 { display: flex; flex-direction: column; gap: 24px; }
+.vstack-4 { display: flex; flex-direction: column; gap: 16px; }
+.hstack   { display: flex; align-items: center; }
+.gap-2    { gap: 8px; }
+.gap-3    { gap: 12px; }
+.ml-auto  { margin-left: auto; }
+
+/* ── CARDS ────────────────────────────────────────────── */
+.card { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); }
+
+/* ── STAT CARDS (DASHBOARD) ───────────────────────────── */
+.stat-grid-2  { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.stat-card    {
+  background: #fff; border-radius: 16px; padding: 24px 28px;
+  display: flex; align-items: center; gap: 20px;
+  box-shadow: var(--shadow); border-left: 5px solid;
+  transition: box-shadow .2s;
+}
+.stat-card:hover { box-shadow: var(--shadow-lg); }
+.stat-icon    { width: 60px; height: 60px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stat-icon svg{ width: 28px; height: 28px; }
+.stat-val     { font-size: 46px; font-weight: 900; line-height: 1; }
+.stat-lbl     { font-size: 11px; font-weight: 900; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+/* ── DEPT CARDS ───────────────────────────────────────── */
+.dept-grid-4  { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+.dept-card    {
+  background: #fff; border-radius: 16px; padding: 18px;
+  border-left: 5px solid; box-shadow: var(--shadow);
+  transition: box-shadow .2s;
+}
+.dept-card:hover { box-shadow: var(--shadow-lg); }
+.dept-emoji   { font-size: 26px; margin-bottom: 10px; }
+.dept-count   { font-size: 36px; font-weight: 900; line-height: 1; }
+.dept-name    { font-size: 13px; font-weight: 800; color: #1e293b; margin-top: 4px; }
+.dept-id      { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+.dept-bar-bg  { height: 6px; background: var(--bg); border-radius: 999px; margin-top: 12px; overflow: hidden; }
+.dept-bar     { height: 100%; border-radius: 999px; }
+
+/* ── BUDGET CARD ──────────────────────────────────────── */
+.budget-card  {
+  background: #fff; border-radius: 16px; padding: 20px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-left: 5px solid #10B981; box-shadow: var(--shadow);
+}
+.budget-card:hover { box-shadow: var(--shadow-lg); }
+.budget-lbl   { font-size: 11px; font-weight: 900; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+.budget-val   { font-size: 36px; font-weight: 900; color: var(--navy); margin-top: 6px; }
+.budget-sub   { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 4px; }
+.budget-icon  { width: 48px; height: 48px; color: #6ee7b7; flex-shrink: 0; }
+.budget-icon svg { width: 48px; height: 48px; }
+
+/* ── SECTION LABEL ────────────────────────────────────── */
+.section-lbl  { font-size: 11px; font-weight: 900; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+
+/* ── TOOLBAR ──────────────────────────────────────────── */
+.toolbar      {
+  background: #fff; border-radius: 14px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  box-shadow: var(--shadow);
+}
+.search-wrap  { position: relative; flex: 1; min-width: 200px; }
+.search-icon  { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.search-icon svg { width: 16px; height: 16px; }
+.search-input {
+  width: 100%; padding: 10px 36px; border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 13px; color: var(--text); outline: none; transition: border-color .15s;
+}
+.search-input:focus { border-color: var(--navy); }
+.search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); display: none; }
+.search-clear svg { width: 14px; height: 14px; }
+.search-clear.visible { display: flex; }
+
+/* ── BUTTONS ──────────────────────────────────────────── */
+.btn-primary  {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+  border-radius: 10px; border: none; font-size: 12px; font-weight: 900; letter-spacing: 1px;
+  color: #fff; white-space: nowrap;
+  background: linear-gradient(135deg, #0056b3, #001f3f);
+  box-shadow: 0 4px 16px rgba(0,86,179,.3);
+  transition: opacity .15s, transform .1s;
+}
+.btn-primary:hover   { opacity: .9; }
+.btn-primary:active  { transform: scale(.97); }
+.btn-primary:disabled{ opacity: .4; cursor: not-allowed; box-shadow: none; }
+.btn-primary svg     { width: 15px; height: 15px; }
+
+.btn-ghost    {
+  display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px;
+  border-radius: 10px; border: 1.5px solid var(--border); font-size: 13px;
+  font-weight: 800; color: var(--text2); background: #fff; transition: background .15s;
+}
+.btn-ghost:hover { background: #f8fafc; }
+.btn-ghost svg  { width: 14px; height: 14px; }
+
+.btn-danger   {
+  display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px;
+  border-radius: 10px; border: none; font-size: 13px; font-weight: 900;
+  color: #fff; background: #dc2626; transition: background .15s, transform .1s;
+}
+.btn-danger:hover  { background: #b91c1c; }
+.btn-danger:active { transform: scale(.97); }
+
+/* ── TABLE ────────────────────────────────────────────── */
+.tbl-wrap     { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+.tbl-scroll   { overflow-x: auto; }
+table         { width: 100%; border-collapse: collapse; min-width: 640px; }
+thead tr      { background: linear-gradient(135deg, #001f3f, #003366); }
+thead th      {
+  text-align: left; padding: 14px 18px;
+  font-size: 11px; font-weight: 900; color: rgba(255,255,255,.72);
+  letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap;
+}
+tbody tr      { border-bottom: 1px solid #f8fafc; transition: background .12s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover{ background: #eff6ff !important; }
+tbody tr:nth-child(even) { background: #fafbff; }
+td            { padding: 13px 18px; font-size: 13px; color: #334155; vertical-align: middle; }
+
+.id-badge     {
+  font-family: 'Courier New', monospace; font-size: 11px; font-weight: 700;
+  padding: 3px 8px; border-radius: 6px;
+  background: rgba(0,31,63,.08); color: #001f3f;
+  display: inline-block;
+}
+.emp-cell     { display: flex; align-items: center; gap: 10px; }
+.emp-av       {
+  width: 32px; height: 32px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; color: #fff;
+  font-size: 11px; font-weight: 900; flex-shrink: 0;
+}
+.dept-pill    {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800;
+}
+.pill-dot     { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.action-row   { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.act-btn      {
+  display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px;
+  border-radius: 8px; border: none; font-size: 11px; font-weight: 900;
+  transition: transform .1s, opacity .12s; white-space: nowrap;
+}
+.act-btn:hover  { opacity: .82; }
+.act-btn:active { transform: scale(.93); }
+.act-btn svg    { width: 13px; height: 13px; }
+
+/* ── PAGINATION ───────────────────────────────────────── */
+.pager        { padding: 12px 18px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.pager-info   { font-size: 12px; color: var(--muted); font-weight: 600; }
+.pager-btns   { display: flex; gap: 4px; flex-wrap: wrap; }
+.pg-btn       {
+  min-width: 30px; height: 30px; padding: 0 8px; border-radius: 8px;
+  border: 1.5px solid var(--border); background: #fff; font-size: 12px; font-weight: 800; color: #64748b;
+  transition: all .15s;
+}
+.pg-btn:hover    { background: #f8fafc; }
+.pg-btn.active   { background: var(--navy); color: #fff; border-color: var(--navy); }
+.pg-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ── MODAL ────────────────────────────────────────────── */
+.modal-overlay{
+  position: fixed; inset: 0; z-index: 999;
+  display: none; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(0,10,30,.72); backdrop-filter: blur(6px);
+}
+.modal-overlay.open { display: flex; }
+.modal-box    {
+  background: #fff; border-radius: 20px; width: 100%; max-width: 480px;
+  max-height: 92vh; overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,.35);
+  animation: pop .2s ease;
+}
+@keyframes pop { from { transform: scale(.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-head   {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px; border-bottom: 1px solid #f1f5f9;
+  background: linear-gradient(135deg, #001f3f, #003366);
+}
+.modal-title  { font-size: 16px; font-weight: 900; color: #fff; }
+.modal-close  {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: rgba(255,255,255,.12); border: none; color: #fff;
+  display: flex; align-items: center; justify-content: center; transition: background .15s;
+}
+.modal-close:hover { background: rgba(255,255,255,.22); }
+.modal-close svg   { width: 16px; height: 16px; }
+.modal-body   { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ── FORM FIELDS ──────────────────────────────────────── */
+.field        { display: flex; flex-direction: column; gap: 6px; }
+.field label  { font-size: 10px; font-weight: 900; color: #64748b; letter-spacing: 1.5px; text-transform: uppercase; }
+.field input, .field select {
+  padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 13px; color: var(--text); outline: none;
+  transition: border-color .15s; background: #fff; width: 100%;
+}
+.field input:focus, .field select:focus { border-color: var(--navy); }
+.field input.err { border-color: #ef4444; background: #fef2f2; }
+.field-err    { font-size: 11px; color: #ef4444; font-weight: 700; }
+.sel-wrap     { position: relative; }
+.sel-arrow    { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted); }
+.sel-arrow svg{ width: 15px; height: 15px; }
+.sel-wrap select { padding-right: 36px; appearance: none; cursor: pointer; }
+
+/* ── SALARY PREVIEW (FORM) ────────────────────────────── */
+.sal-preview  { border-radius: 12px; padding: 16px; border: 1.5px solid var(--border); background: rgba(0,31,63,.04); }
+.sal-prev-lbl { font-size: 10px; font-weight: 900; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.sal-formula  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sal-base     { font-size: 14px; font-weight: 700; color: var(--text2); }
+.sal-op       { font-size: 14px; color: #cbd5e1; }
+.sal-mult     { font-size: 14px; font-weight: 900; color: #1d4ed8; }
+.sal-gross    { font-size: 20px; font-weight: 900; color: var(--navy); }
+.modal-btn-row{ display: flex; gap: 10px; margin-top: 6px; }
+.modal-btn-row > * { flex: 1; justify-content: center; }
+
+/* ── VIEW MODAL ───────────────────────────────────────── */
+.view-head    { display: flex; align-items: center; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid #f1f5f9; }
+.view-av      { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: 900; flex-shrink: 0; }
+.view-emp-name{ font-size: 20px; font-weight: 900; color: #0f172a; }
+.view-row     { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #f8fafc; font-size: 13px; }
+.view-row:last-child { border-bottom: none; }
+.view-lbl     { color: var(--muted); font-weight: 700; }
+.view-val     { font-weight: 900; color: #1e293b; }
+
+/* ── SALARY SLIP ──────────────────────────────────────── */
+.slip-hdr     {
+  border-radius: 12px; padding: 20px; color: #fff; position: relative; overflow: hidden;
+  background: linear-gradient(135deg, #001f3f, #0056b3);
+}
+.slip-dots    { position: absolute; inset: 0; opacity: .08; background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 18px 18px; }
+.slip-brand   { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; position: relative; }
+.slip-brand-ic{ width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,.15); display: flex; align-items: center; justify-content: center; }
+.slip-brand-ic svg { width: 18px; height: 18px; }
+.slip-b-name  { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
+.slip-b-sub   { font-size: 10px; color: rgba(147,197,253,.8); font-weight: 700; margin-top: 2px; }
+.slip-meta    { position: relative; }
+.slip-row2    { display: flex; justify-content: space-between; align-items: flex-end; }
+.slip-month   { font-size: 11px; color: rgba(147,197,253,.8); font-weight: 700; margin-bottom: 4px; }
+.slip-emp-name{ font-size: 20px; font-weight: 900; }
+.slip-emp-sub { font-size: 13px; color: rgba(147,197,253,.8); margin-top: 2px; }
+.slip-net-lbl { font-size: 10px; color: rgba(147,197,253,.8); font-weight: 700; text-align: right; }
+.slip-net-val { font-size: 26px; font-weight: 900; text-align: right; }
+.slip-sec-lbl { font-size: 10px; font-weight: 900; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin: 14px 0 8px; }
+.slip-line    { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+.slip-line-lbl{ color: var(--muted); }
+.slip-line-val{ font-weight: 700; color: var(--text); }
+.slip-line-ded{ font-weight: 700; color: #ef4444; }
+.slip-divider { border: none; border-top: 1px solid #f1f5f9; margin: 6px 0; }
+.slip-total   { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; font-weight: 900; }
+.slip-net-bar {
+  border-radius: 12px; padding: 14px 18px;
+  display: flex; justify-content: space-between; align-items: center;
+  background: rgba(0,31,63,.05); border: 1.5px solid var(--border); margin-top: 8px;
+}
+.slip-nb-lbl  { font-size: 14px; font-weight: 900; color: #1e293b; }
+.slip-nb-val  { font-size: 24px; font-weight: 900; color: var(--navy); }
+
+/* ── DELETE MODAL ─────────────────────────────────────── */
+.del-center   { text-align: center; padding: 4px 0; }
+.del-icon-wrap{ width: 64px; height: 64px; border-radius: 50%; background: #fef2f2; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.del-icon-wrap svg { width: 30px; height: 30px; color: #dc2626; }
+.del-title    { font-size: 18px; font-weight: 900; color: #0f172a; margin-bottom: 8px; }
+.del-text     { font-size: 13px; color: #64748b; line-height: 1.6; }
+
+/* ── DEPARTMENTS SCREEN ───────────────────────────────── */
+.dept-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.dept-detail-card {
+  background: #fff; border-radius: 16px; padding: 24px;
+  border-left: 5px solid; box-shadow: var(--shadow); transition: box-shadow .2s;
+}
+.dept-detail-card:hover { box-shadow: var(--shadow-lg); }
+.dd-head      { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.dd-icon      { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.dd-icon svg  { width: 26px; height: 26px; }
+.dd-id        { font-size: 10px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
+.dd-name      { font-size: 22px; font-weight: 900; color: #0f172a; }
+.dd-count     { margin-left: auto; text-align: right; }
+.dd-cnt-num   { font-size: 28px; font-weight: 900; line-height: 1; }
+.dd-cnt-lbl   { font-size: 11px; color: var(--muted); font-weight: 700; }
+.dd-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.dd-stat      { border-radius: 10px; padding: 12px; }
+.dd-stat-lbl  { font-size: 10px; font-weight: 900; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.dd-stat-val  { font-size: 15px; font-weight: 900; }
+.mult-row     { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; font-size: 13px; border-bottom: 1px solid #f8fafc; }
+.mult-row:last-child { border-bottom: none; }
+.mult-type    { display: flex; align-items: center; gap: 8px; color: #64748b; font-weight: 600; }
+.mult-dot     { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.mult-right   { display: flex; align-items: center; gap: 8px; }
+.mult-badge   { font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 6px; }
+.mult-val     { font-size: 13px; font-weight: 900; color: #1e293b; }
+
+/* ── SALARY SCREEN ────────────────────────────────────── */
+.sal-screen-hdr {
+  background: #fff; border-radius: 14px; padding: 18px 22px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  box-shadow: var(--shadow);
+}
+.sal-hdr-title { font-size: 17px; font-weight: 900; color: #0f172a; }
+.sal-hdr-sub   { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+.sal-picker    { background: #fff; border-radius: 14px; padding: 20px; box-shadow: var(--shadow); }
+.sal-picker-lbl{ font-size: 10px; font-weight: 900; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
+.sal-filter-row{ display: flex; gap: 10px; flex-wrap: wrap; }
+.sal-filter-row .sel-wrap { flex: 1; min-width: 160px; }
+.sal-filter-row select {
+  width: 100%; padding: 10px 36px 10px 14px; border: 1.5px solid var(--border);
+  border-radius: 10px; font-size: 13px; color: var(--text); outline: none;
+  appearance: none; background: #fff; transition: border-color .15s; cursor: pointer;
+}
+.sal-filter-row select:focus { border-color: var(--navy); }
+.emp-preview  { border-radius: 12px; overflow: hidden; border: 1.5px solid var(--border); box-shadow: 0 2px 10px rgba(0,0,0,.06); margin-top: 14px; }
+.ep-head      {
+  padding: 16px 20px; color: #fff;
+  background: linear-gradient(135deg, #001f3f, #0056b3);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.ep-name      { font-size: 18px; font-weight: 900; }
+.ep-sub       { font-size: 13px; color: rgba(147,197,253,.8); margin-top: 2px; }
+.ep-net-lbl   { font-size: 10px; color: rgba(147,197,253,.8); text-align: right; }
+.ep-net-val   { font-size: 28px; font-weight: 900; }
+.ep-stats     { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; padding: 14px; background: #fff; }
+.ep-stat      { text-align: center; border-radius: 10px; padding: 10px 6px; }
+.ep-stat-val  { font-size: 13px; font-weight: 900; }
+.ep-stat-lbl  { font-size: 10px; color: var(--muted); font-weight: 700; margin-top: 2px; }
+.sal-tbl-hdr  { padding: 14px 18px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }
+.sal-tbl-title{ font-size: 13px; font-weight: 900; color: var(--text2); letter-spacing: 1px; text-transform: uppercase; }
+.sal-tbl-cnt  { font-size: 12px; color: var(--muted); font-weight: 600; }
+.type-badge   { font-size: 11px; font-weight: 900; padding: 2px 8px; border-radius: 6px; background: #f1f5f9; color: #64748b; white-space: nowrap; }
+
+/* ── MOBILE OVERLAY ───────────────────────────────────── */
+.mob-overlay  { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 40; }
+.mob-overlay.open { display: block; }
+
+/* ── RESPONSIVE ───────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .dept-grid-4 { grid-template-columns: repeat(2,1fr); }
+  .ep-stats    { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 768px) {
+  .sidebar     { position: fixed; top: 0; left: 0; height: 100%; transform: translateX(-100%); }
+  .sidebar.open{ transform: translateX(0); }
+  .mob-menu-btn{ display: flex; }
+  .content     { padding: 16px; }
+  .stat-grid-2 { grid-template-columns: 1fr; }
+  .dept-detail-grid { grid-template-columns: 1fr; }
+  .tb-uname, .tb-urole { display: none; }
+  .topbar      { padding: 12px 16px; }
+}
+@media (max-width: 520px) {
+  .dept-grid-4 { grid-template-columns: 1fr 1fr; }
+  .sal-filter-row { flex-direction: column; }
+  .ep-stats    { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ MODALS ══════════════════════════════════════════════════════════ -->
+
+<!-- View Modal -->
+<div id="modal-view" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">Employee Details</span>
+      <button class="modal-close" onclick="closeModal('modal-view')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="view-body"></div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="modal-form" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title" id="form-modal-title">Add New Employee</span>
+      <button class="modal-close" onclick="closeModal('modal-form')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Full Name</label>
+        <input id="f-name" type="text" placeholder="Enter full name" oninput="updateSalPrev()" />
+        <span class="field-err" id="f-name-err"></span>
+      </div>
+      <div class="field">
+        <label>Date of Birth</label>
+        <input id="f-dob" type="date" />
+        <span class="field-err" id="f-dob-err"></span>
+      </div>
+      <div class="field">
+        <label>Department</label>
+        <div class="sel-wrap">
+          <select id="f-dept" onchange="updateSalPrev()"></select>
+          <span class="sel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Assigned Station</label>
+        <div class="sel-wrap">
+          <select id="f-station" onchange="updateSalPrev()"></select>
+          <span class="sel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></span>
+        </div>
+      </div>
+      <div class="sal-preview" id="sal-prev-box">
+        <div class="sal-prev-lbl">Salary Preview</div>
+        <div class="sal-formula" id="sal-prev-formula"></div>
+      </div>
+      <div class="modal-btn-row">
+        <button class="btn-ghost" onclick="closeModal('modal-form')">Cancel</button>
+        <button class="btn-primary" onclick="submitForm()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+          <span id="form-btn-text">Add Employee</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Salary Slip Modal -->
+<div id="modal-slip" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">Salary Slip</span>
+      <button class="modal-close" onclick="closeModal('modal-slip')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="slip-body"></div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="modal-delete" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">Remove Employee</span>
+      <button class="modal-close" onclick="closeModal('modal-delete')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="del-center">
+        <div class="del-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="del-title">Confirm Removal</div>
+        <div class="del-text" id="del-text"></div>
+        <div class="modal-btn-row" style="margin-top:18px;">
+          <button class="btn-ghost" onclick="closeModal('modal-delete')">Cancel</button>
+          <button class="btn-danger" onclick="confirmDelete()">Yes, Remove</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP SHELL ════════════════════════════════════════════════════════ -->
+<div class="app">
+  <div class="mob-overlay" id="mob-overlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <div class="sb-brand-row">
+        <div class="sb-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6Z"/><path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><circle cx="8" cy="17" r="1"/><circle cx="16" cy="17" r="1"/><path d="M9 11V8m6 3V8"/></svg>
+        </div>
+        <div>
+          <div class="sb-title">DELHI METRO</div>
+          <div class="sb-subtitle">Payroll Management</div>
+        </div>
+      </div>
+      <div class="sb-status"><div class="sb-dot"></div><span class="sb-status-txt">System Active</span></div>
+    </div>
+
+    <nav class="sb-nav">
+      <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        DASHBOARD
+        <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+      <button class="nav-btn" data-tab="employee" onclick="switchTab('employee')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        EMPLOYEE
+      </button>
+      <button class="nav-btn" data-tab="departments" onclick="switchTab('departments')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+        DEPARTMENTS
+      </button>
+      <button class="nav-btn" data-tab="salary" onclick="switchTab('salary')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        SALARY
+      </button>
+    </nav>
+
+    <div class="sb-footer">
+      <button class="sb-foot-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        PRIVACY POLICY
+      </button>
+      <button class="sb-foot-btn danger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        SIGN OUT
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="mob-menu-btn" onclick="openSidebar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div>
+          <div class="tb-title" id="page-title">DASHBOARD</div>
+          <div class="tb-sub">Delhi Metro Rail Corporation</div>
+        </div>
+      </div>
+      <div class="tb-right">
+        <button class="tb-bell">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="tb-bell-dot"></span>
+        </button>
+        <div class="tb-user">
+          <div class="tb-avatar">AD</div>
+          <div>
+            <div class="tb-uname">Admin Panel</div>
+            <div class="tb-urole">Super Admin</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ── DASHBOARD ─────────────────────────────────── -->
+      <div id="screen-dashboard" class="screen active">
+        <div class="vstack-6">
+          <div class="stat-grid-2">
+            <div class="stat-card" style="border-color:#0056b3">
+              <div class="stat-icon" style="background:rgba(0,86,179,.1)">
+                <svg style="color:#0056b3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div>
+                <div class="stat-val" style="color:#0056b3" id="dash-total-emp">100</div>
+                <div class="stat-lbl">TOTAL EMPLOYEES</div>
+              </div>
+            </div>
+            <div class="stat-card" style="border-color:#001f3f">
+              <div class="stat-icon" style="background:rgba(0,31,63,.1)">
+                <svg style="color:#001f3f" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+              </div>
+              <div>
+                <div class="stat-val" style="color:#001f3f">4</div>
+                <div class="stat-lbl">TOTAL DEPARTMENTS</div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="section-lbl">Staff Count by Department</div>
+            <div class="dept-grid-4" id="dash-dept-cards"></div>
+          </div>
+
+          <div class="budget-card">
+            <div>
+              <div class="budget-lbl">Monthly Payroll Budget</div>
+              <div class="budget-val" id="dash-budget">—</div>
+              <div class="budget-sub" id="dash-budget-sub">Gross salaries across all employees</div>
+            </div>
+            <div class="budget-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── EMPLOYEE ───────────────────────────────────── -->
+      <div id="screen-employee" class="screen">
+        <div class="vstack-4">
+          <div class="toolbar">
+            <div class="search-wrap">
+              <span class="search-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </span>
+              <input class="search-input" id="emp-search" placeholder="Search by id or name" oninput="renderEmployeeTable()" />
+              <button class="search-clear" id="search-clear-btn" onclick="clearSearch()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <button class="btn-primary" onclick="openAddModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              ADD NEW EMPLOYEE
+            </button>
+          </div>
+          <div class="tbl-wrap">
+            <div class="tbl-scroll">
+              <table>
+                <thead>
+                  <tr><th>E_ID</th><th>NAME</th><th>DOB</th><th>DEPARTMENT</th><th>ACTIONS</th></tr>
+                </thead>
+                <tbody id="emp-tbody"></tbody>
+              </table>
+            </div>
+            <div class="pager" id="emp-pager"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DEPARTMENTS ────────────────────────────────── -->
+      <div id="screen-departments" class="screen">
+        <div class="dept-detail-grid" id="dept-detail-grid"></div>
+      </div>
+
+      <!-- ── SALARY ─────────────────────────────────────── -->
+      <div id="screen-salary" class="screen">
+        <div class="vstack-4">
+          <div class="sal-screen-hdr">
+            <div>
+              <div class="sal-hdr-title">Payroll Management</div>
+              <div class="sal-hdr-sub">Generate and manage salary slips</div>
+            </div>
+            <button class="btn-primary" id="sal-add-btn" disabled onclick="openSlipFromSalary()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              ADD SALARY
+            </button>
+          </div>
+          <div class="sal-picker">
+            <div class="sal-picker-lbl">Generate Salary Slip</div>
+            <div class="sal-filter-row">
+              <div class="sel-wrap">
+                <select id="sal-dept-filter" onchange="renderSalaryPicker()">
+                  <option value="">All Departments</option>
+                </select>
+                <span class="sel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></span>
+              </div>
+              <div class="sel-wrap">
+                <select id="sal-emp-select" onchange="onSalEmpChange()">
+                  <option value="">— Select Employee —</option>
+                </select>
+                <span class="sel-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></span>
+              </div>
+            </div>
+            <div id="sal-emp-preview"></div>
+          </div>
+          <div class="tbl-wrap">
+            <div class="sal-tbl-hdr">
+              <span class="sal-tbl-title">Payroll Summary</span>
+              <span class="sal-tbl-cnt" id="sal-tbl-cnt"></span>
+            </div>
+            <div class="tbl-scroll">
+              <table>
+                <thead><tr><th>E_ID</th><th>NAME</th><th>DEPT</th><th>BASE PAY</th><th>MULTIPLIER</th><th>GROSS SALARY</th></tr></thead>
+                <tbody id="sal-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ══ JAVASCRIPT ════════════════════════════════════════════════════════ -->
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+
+
+
+
+// ── API CONFIG ──────────────────────────────────────────
+const API_BASE = 'http://localhost:3000'; // ← change to your server URL
+
+let employees   = [];
+let DEPARTMENTS = [];
+let STATIONS    = [];
+
+// Multipliers come from your Stations.allowance_multiplier column
+// This will be built dynamically after stations load
+let MULTIPLIERS = {};
+
+// ── LOAD DATA FROM BACKEND ──────────────────────────────
+async function loadAllData() {
+  try {
+    // Fetch all three in parallel
+    const [empRes, deptRes, stnRes] = await Promise.all([
+      fetch(`${API_BASE}/api/employees`),
+      fetch(`${API_BASE}/api/departments`),
+      fetch(`${API_BASE}/api/stations`)
+    ]);
+
+    if (!empRes.ok)  throw new Error(`Employees API returned ${empRes.status}`);
+    if (!deptRes.ok) throw new Error(`Departments API returned ${deptRes.status}`);
+    if (!stnRes.ok)  throw new Error(`Stations API returned ${stnRes.status}`);
+
+    employees   = await empRes.json();
+    DEPARTMENTS = await deptRes.json();
+    STATIONS    = await stnRes.json();
+
+    // Build MULTIPLIERS from your real station data
+    // e.g. { "Elevated": 1.0, "Underground": 1.1, "Airport Express": 1.2 }
+    MULTIPLIERS = {};
+    STATIONS.forEach(s => {
+      if (s.type && s.multiplier) {
+        MULTIPLIERS[s.type] = parseFloat(s.multiplier);
+      }
+    });
+
+    // Add color + icon to departments (your DB doesn't have these columns)
+    // So we map them by dept_id here
+    const deptMeta = {
+      'D01': { color: '#0EA5E9', icon: '🧹' },
+      'D02': { color: '#8B5CF6', icon: '📋' },
+      'D03': { color: '#F59E0B', icon: '🔧' },
+      'D04': { color: '#10B981', icon: '⚙️' },
+    };
+    DEPARTMENTS = DEPARTMENTS.map(d => ({
+      ...d,
+      basePay: parseFloat(d.basePay), // ensure number not string
+      color: deptMeta[d.id]?.color ?? '#64748b',
+      icon:  deptMeta[d.id]?.icon  ?? '🏢',
+    }));
+
+    console.log(`✅ Loaded: ${employees.length} employees, ${DEPARTMENTS.length} depts, ${STATIONS.length} stations`);
+    renderDashboard();
+
+  } catch (err) {
+    console.error('❌ loadAllData failed:', err.message);
+    alert('❌ Cannot connect to server.\n\nMake sure:\n1. node main.js is running\n2. You opened this page via http://localhost:3000/index2.html\n\nError: ' + err.message);
+  }
+}
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+const fmtINR = n => new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(n);
+const fmtDate = d => { if(!d)return"—"; const[y,m,day]=d.split("-"); return`${day}/${m}/${y}`; };
+const getDept    = id => DEPARTMENTS.find(d=>d.id===id);
+const getStation = id => STATIONS.find(s=>s.id===id);
+const calcSalary = emp => {
+  const dept=getDept(emp.deptId), stn=getStation(emp.stationId);
+  return (dept&&stn) ? Math.round(dept.basePay*MULTIPLIERS[stn.type]) : 0;
+};
+const initials = name => name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+const hex2rgba = (hex,a) => {
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+};
+const nextId = () => {
+  const nums = employees.map(e=>parseInt(e.id.slice(1)));
+  return `E${String(Math.max(...nums,0)+1).padStart(3,"0")}`;
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentTab   = "dashboard";
+let empPage      = 0;
+const PER_PAGE   = 10;
+let editingId    = null;
+let deletingId   = null;
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  document.querySelector(`#screen-${tab}`).classList.add("active");
+  document.querySelector(`[data-tab="${tab}"]`).classList.add("active");
+
+  // show/hide chevron
+  document.querySelectorAll(".nav-chevron").forEach(c=>c.style.display="none");
+  const active = document.querySelector(`[data-tab="${tab}"]`);
+  const chev = active.querySelector(".nav-chevron");
+  if(chev) chev.style.display="block";
+
+  document.getElementById("page-title").textContent = tab.toUpperCase();
+  currentTab = tab;
+  closeSidebar();
+
+  if(tab==="dashboard")   renderDashboard();
+  if(tab==="employee")    renderEmployeeTable();
+  if(tab==="departments") renderDepartments();
+  if(tab==="salary")      renderSalaryScreen();
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────────────────────────
+function openSidebar()  { document.getElementById("sidebar").classList.add("open"); document.getElementById("mob-overlay").classList.add("open"); }
+function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("mob-overlay").classList.remove("open"); }
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  document.getElementById("dash-total-emp").textContent = employees.length;
+  const budget = employees.reduce((s,e)=>s+calcSalary(e),0);
+  document.getElementById("dash-budget").textContent = fmtINR(budget);
+  document.getElementById("dash-budget-sub").textContent = `Gross salaries across all ${employees.length} employees`;
+
+  const grid = document.getElementById("dash-dept-cards");
+  grid.innerHTML = DEPARTMENTS.map(d => {
+    const count = employees.filter(e=>e.deptId===d.id).length;
+    const pct   = Math.round((count/employees.length)*100);
+    return `
+      <div class="dept-card" style="border-left-color:${d.color}">
+        <div class="dept-emoji">${d.icon}</div>
+        <div class="dept-count" style="color:${d.color}">${count}</div>
+        <div class="dept-name">${d.name}</div>
+        <div class="dept-id">${d.id}</div>
+        <div class="dept-bar-bg"><div class="dept-bar" style="width:${pct}%;background:${d.color}"></div></div>
+      </div>`;
+  }).join("");
+}
+
+// ── EMPLOYEE TABLE ─────────────────────────────────────────────────────────────
+function renderEmployeeTable() {
+  const q = document.getElementById("emp-search").value.toLowerCase();
+  document.getElementById("search-clear-btn").classList.toggle("visible", q.length>0);
+
+  const filtered = employees.filter(e=>
+    !q || e.id.toLowerCase().includes(q) || e.name.toLowerCase().includes(q)
+  );
+
+  const totalPages = Math.ceil(filtered.length/PER_PAGE);
+  if(empPage >= totalPages) empPage = Math.max(0, totalPages-1);
+  const slice = filtered.slice(empPage*PER_PAGE, empPage*PER_PAGE+PER_PAGE);
+
+  const tbody = document.getElementById("emp-tbody");
+  if(slice.length===0){
+    tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:40px;color:#94a3b8">No employees found.</td></tr>`;
+  } else {
+    tbody.innerHTML = slice.map(emp => {
+      const dept = getDept(emp.deptId);
+      const av   = `<div class="emp-av" style="background:linear-gradient(135deg,${dept?.color??'#64748b'},${dept?.color??'#64748b'}aa)">${initials(emp.name)}</div>`;
+      const pill = `<span class="dept-pill" style="background:${hex2rgba(dept?.color??'#64748b',.12)};color:${dept?.color??'#64748b'}">
+        <span class="pill-dot" style="background:${dept?.color}"></span>${dept?.name??'—'}</span>`;
+      const actions = `
+        <div class="action-row">
+          <button class="act-btn" style="background:${hex2rgba('#0056b3',.12)};color:#0056b3" onclick="openViewModal('${emp.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> View</button>
+          <button class="act-btn" style="background:${hex2rgba('#8B5CF6',.12)};color:#8B5CF6" onclick="openEditModal('${emp.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+          <button class="act-btn" style="background:${hex2rgba('#10B981',.12)};color:#10B981" onclick="openSlipModal('${emp.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Salary</button>
+          <button class="act-btn" style="background:${hex2rgba('#EF4444',.12)};color:#EF4444" onclick="openDeleteModal('${emp.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg> Remove</button>
+        </div>`;
+      return `<tr>
+        <td><span class="id-badge">${emp.id}</span></td>
+        <td><div class="emp-cell">${av}<span style="font-weight:700;color:#1e293b">${emp.name}</span></div></td>
+        <td style="color:#64748b;font-weight:600">${fmtDate(emp.dob)}</td>
+        <td>${pill}</td>
+        <td>${actions}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  // Pagination
+  const pager = document.getElementById("emp-pager");
+  if(totalPages<=1){ pager.innerHTML=""; return; }
+  let btns = `<span class="pager-info">${filtered.length} results · Page ${empPage+1} of ${totalPages}</span><div class="pager-btns">`;
+  btns += `<button class="pg-btn" onclick="setEmpPage(${empPage-1})" ${empPage===0?"disabled":""}>← Prev</button>`;
+  for(let i=0;i<Math.min(totalPages,8);i++)
+    btns += `<button class="pg-btn${i===empPage?" active":""}" onclick="setEmpPage(${i})">${i+1}</button>`;
+  btns += `<button class="pg-btn" onclick="setEmpPage(${empPage+1})" ${empPage===totalPages-1?"disabled":""}>Next →</button></div>`;
+  pager.innerHTML = btns;
+}
+function setEmpPage(p){ empPage=p; renderEmployeeTable(); }
+function clearSearch(){ document.getElementById("emp-search").value=""; renderEmployeeTable(); }
+
+// ── VIEW MODAL ─────────────────────────────────────────────────────────────────
+function openViewModal(id) {
+  const emp = employees.find(e=>e.id===id);
+  const dept = getDept(emp.deptId), stn = getStation(emp.stationId);
+  const gross = calcSalary(emp), mult = stn ? MULTIPLIERS[stn.type] : 1;
+  document.getElementById("view-body").innerHTML = `
+    <div class="view-head">
+      <div class="view-av" style="background:linear-gradient(135deg,${dept?.color??'#001f3f'},${dept?.color??'#001f3f'}aa)">${initials(emp.name)}</div>
+      <div><div class="view-emp-name">${emp.name}</div><span class="id-badge">${emp.id}</span></div>
+    </div>
+    ${[["Date of Birth",fmtDate(emp.dob)],["Department",`${dept?.name??'—'} (${emp.deptId})`],
+       ["Station",stn?`${stn.name} (${emp.stationId})`:"—"],["Station Type",stn?.type??'—'],
+       ["Base Pay",fmtINR(dept?.basePay??0)],["Multiplier",`${mult.toFixed(1)}×`],
+       ["Gross Salary",fmtINR(gross)]]
+      .map(([l,v])=>`<div class="view-row"><span class="view-lbl">${l}</span><span class="view-val">${v}</span></div>`).join("")}`;
+  openModal("modal-view");
+}
+
+// ── ADD/EDIT MODAL ─────────────────────────────────────────────────────────────
+function populateFormSelects() {
+  const deptSel = document.getElementById("f-dept");
+  const stnSel  = document.getElementById("f-station");
+  deptSel.innerHTML = DEPARTMENTS.map(d=>`<option value="${d.id}">${d.id} — ${d.name} (${fmtINR(d.basePay)})</option>`).join("");
+  stnSel.innerHTML  = STATIONS.map(s=>`<option value="${s.id}">${s.id} — ${s.name} (${s.type})</option>`).join("");
+}
+function updateSalPrev() {
+  const deptId = document.getElementById("f-dept").value;
+  const stnId  = document.getElementById("f-station").value;
+  const dept = getDept(deptId), stn = getStation(stnId);
+  if(!dept||!stn) return;
+  const mult   = MULTIPLIERS[stn.type];
+  const gross  = Math.round(dept.basePay*mult);
+  document.getElementById("sal-prev-formula").innerHTML =
+    `<span class="sal-base">${fmtINR(dept.basePay)}</span>
+     <span class="sal-op">×</span>
+     <span class="sal-mult">${mult.toFixed(1)}</span>
+     <span style="font-size:12px;color:#94a3b8">(${stn.type})</span>
+     <span class="sal-op">=</span>
+     <span class="sal-gross">${fmtINR(gross)}</span>`;
+}
+function openAddModal() {
+  editingId = null;
+  document.getElementById("form-modal-title").textContent = "Add New Employee";
+  document.getElementById("form-btn-text").textContent = "Add Employee";
+  populateFormSelects();
+  document.getElementById("f-name").value = "";
+  document.getElementById("f-dob").value  = "";
+  document.getElementById("f-dept").value = "D01";
+  document.getElementById("f-station").value = "S0001";
+  ["f-name-err","f-dob-err"].forEach(id=>document.getElementById(id).textContent="");
+  ["f-name"].forEach(id=>document.getElementById(id).classList.remove("err"));
+  updateSalPrev();
+  openModal("modal-form");
+}
+function openEditModal(id) {
+  editingId = id;
+  const emp = employees.find(e=>e.id===id);
+  document.getElementById("form-modal-title").textContent = "Edit Employee";
+  document.getElementById("form-btn-text").textContent = "Save Changes";
+  populateFormSelects();
+  document.getElementById("f-name").value    = emp.name;
+  document.getElementById("f-dob").value     = emp.dob;
+  document.getElementById("f-dept").value    = emp.deptId;
+  document.getElementById("f-station").value = emp.stationId;
+  ["f-name-err","f-dob-err"].forEach(id=>document.getElementById(id).textContent="");
+  updateSalPrev();
+  openModal("modal-form");
+}
+async function submitForm() {
+  const name = document.getElementById('f-name').value.trim();
+  const dob  = document.getElementById('f-dob').value;
+  let valid  = true;
+
+  if (!name) {
+    document.getElementById('f-name-err').textContent = 'Name is required';
+    document.getElementById('f-name').classList.add('err');
+    valid = false;
+  } else {
+    document.getElementById('f-name-err').textContent = '';
+    document.getElementById('f-name').classList.remove('err');
+  }
+  if (!dob) {
+    document.getElementById('f-dob-err').textContent = 'Date of birth is required';
+    valid = false;
+  } else {
+    document.getElementById('f-dob-err').textContent = '';
+  }
+  if (!valid) return;
+
+  const form = {
+    name,
+    dob,
+    deptId:    document.getElementById('f-dept').value,
+    stationId: document.getElementById('f-station').value,
+  };
+
+  try {
+    if (editingId) {
+      // UPDATE
+      const res = await fetch(`${API_BASE}/api/employees/${editingId}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(form),
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+    } else {
+      // INSERT — generate ID from current max
+      form.id = nextId();
+      const res = await fetch(`${API_BASE}/api/employees`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(form),
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+    }
+
+    closeModal('modal-form');
+    await loadAllData(); // refresh from DB
+    renderEmployeeTable();
+
+  } catch (err) {
+    alert('❌ Save failed: ' + err.message);
+  }
+}
+
+// ── DELETE MODAL ───────────────────────────────────────────────────────────────
+function openDeleteModal(id) {
+  deletingId = id;
+  const emp = employees.find(e=>e.id===id);
+  document.getElementById("del-text").innerHTML =
+    `You are about to permanently remove <strong>${emp.name}</strong> (${emp.id}). This cannot be undone.`;
+  openModal("modal-delete");
+}
+async function confirmDelete() {
+  try {
+    const res = await fetch(`${API_BASE}/api/employees/${deletingId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+
+    deletingId = null;
+    closeModal('modal-delete');
+    await loadAllData(); // refresh from DB
+    renderEmployeeTable();
+
+  } catch (err) {
+    alert('❌ Delete failed: ' + err.message);
+  }
+}
+
+// ── SALARY SLIP MODAL ──────────────────────────────────────────────────────────
+function openSlipModal(id) {
+  const emp  = employees.find(e=>e.id===id);
+  const dept = getDept(emp.deptId), stn = getStation(emp.stationId);
+  const mult = stn ? MULTIPLIERS[stn.type] : 1;
+  const gross = calcSalary(emp);
+  const pf = Math.round(gross*.12), esi = Math.round(gross*.0175), tds = Math.round(gross*.05);
+  const net = gross - pf - esi - tds;
+  const month = new Date().toLocaleString("en-IN",{month:"long",year:"numeric"});
+
+  document.getElementById("slip-body").innerHTML = `
+    <div class="slip-hdr">
+      <div class="slip-dots"></div>
+      <div class="slip-brand">
+        <div class="slip-brand-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M4 11a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6Z"/><path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><circle cx="8" cy="17" r="1"/><circle cx="16" cy="17" r="1"/></svg>
+        </div>
+        <div><div class="slip-b-name">DELHI METRO</div><div class="slip-b-sub">Payroll Management</div></div>
+      </div>
+      <div class="slip-meta">
+        <div class="slip-month">Salary Slip · ${month}</div>
+        <div class="slip-row2">
+          <div><div class="slip-emp-name">${emp.name}</div><div class="slip-emp-sub">${emp.id} · ${dept?.name} · ${stn?.name}</div></div>
+          <div><div class="slip-net-lbl">Net Pay</div><div class="slip-net-val">${fmtINR(net)}</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="slip-sec-lbl">Earnings</div>
+    <div class="slip-line"><span class="slip-line-lbl">Basic Pay (${dept?.name})</span><span class="slip-line-val">${fmtINR(dept?.basePay??0)}</span></div>
+    <div class="slip-line"><span class="slip-line-lbl">Station Allowance (${stn?.type} × ${mult.toFixed(1)})</span><span class="slip-line-val">${fmtINR(gross-(dept?.basePay??0))}</span></div>
+    <hr class="slip-divider"/>
+    <div class="slip-total"><span style="color:#1e293b">Gross Pay</span><span style="color:#001f3f">${fmtINR(gross)}</span></div>
+    <div class="slip-sec-lbl">Deductions</div>
+    <div class="slip-line"><span class="slip-line-lbl">PF (12%)</span><span class="slip-line-ded">−${fmtINR(pf)}</span></div>
+    <div class="slip-line"><span class="slip-line-lbl">ESI (1.75%)</span><span class="slip-line-ded">−${fmtINR(esi)}</span></div>
+    <div class="slip-line"><span class="slip-line-lbl">TDS (5%)</span><span class="slip-line-ded">−${fmtINR(tds)}</span></div>
+    <div class="slip-net-bar"><span class="slip-nb-lbl">NET PAY</span><span class="slip-nb-val">${fmtINR(net)}</span></div>
+    <div class="modal-btn-row" style="margin-top:14px">
+      <button class="btn-ghost" style="justify-content:center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button>
+      <button class="btn-primary" style="justify-content:center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download</button>
+    </div>`;
+  openModal("modal-slip");
+}
+
+// ── DEPARTMENTS SCREEN ─────────────────────────────────────────────────────────
+function renderDepartments() {
+  const grid = document.getElementById("dept-detail-grid");
+  grid.innerHTML = DEPARTMENTS.map(d => {
+    const staff  = employees.filter(e=>e.deptId===d.id);
+    const budget = staff.reduce((s,e)=>s+calcSalary(e),0);
+    const mults  = Object.entries(MULTIPLIERS).map(([type,mult])=>{
+      const dotColor = type==="Elevated"?"#10B981":type==="Underground"?"#3B82F6":"#8B5CF6";
+      return `<div class="mult-row">
+        <span class="mult-type"><span class="mult-dot" style="background:${dotColor}"></span>${type}</span>
+        <div class="mult-right">
+          <span class="mult-badge" style="background:${hex2rgba(d.color,.12)};color:${d.color}">${mult.toFixed(1)}×</span>
+          <span class="mult-val">${fmtINR(Math.round(d.basePay*mult))}</span>
+        </div>
+      </div>`;
+    }).join("");
+    return `
+      <div class="dept-detail-card" style="border-left-color:${d.color}">
+        <div class="dd-head">
+          <div class="dd-icon" style="background:${hex2rgba(d.color,.12)}">
+            <svg style="color:${d.color}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+          </div>
+          <div>
+            <div class="dd-id" style="color:${d.color}">${d.id}</div>
+            <div class="dd-name">${d.name}</div>
+          </div>
+          <div class="dd-count">
+            <div class="dd-cnt-num" style="color:${d.color}">${staff.length}</div>
+            <div class="dd-cnt-lbl">employees</div>
+          </div>
+        </div>
+        <div class="dd-stat-grid">
+          <div class="dd-stat" style="background:${hex2rgba(d.color,.07)}"><div class="dd-stat-lbl">Base Pay</div><div class="dd-stat-val" style="color:${d.color}">${fmtINR(d.basePay)}</div></div>
+          <div class="dd-stat" style="background:${hex2rgba(d.color,.07)}"><div class="dd-stat-lbl">Dept Budget</div><div class="dd-stat-val" style="color:${d.color}">${fmtINR(budget)}</div></div>
+        </div>
+        <div style="font-size:10px;font-weight:900;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px">Salary by Station Type</div>
+        ${mults}
+      </div>`;
+  }).join("");
+}
+
+// ── SALARY SCREEN ─────────────────────────────────────────────────────────────
+function renderSalaryScreen() {
+  // Dept filter
+  const deptFilter = document.getElementById("sal-dept-filter");
+  const saved = deptFilter.value;
+  deptFilter.innerHTML = `<option value="">All Departments</option>` +
+    DEPARTMENTS.map(d=>`<option value="${d.id}">${d.id} — ${d.name}</option>`).join("");
+  deptFilter.value = saved;
+  renderSalaryPicker();
+}
+function renderSalaryPicker() {
+  const deptId  = document.getElementById("sal-dept-filter").value;
+  const filtered= employees.filter(e=>!deptId||e.deptId===deptId);
+  const selEl   = document.getElementById("sal-emp-select");
+  const saved   = selEl.value;
+  selEl.innerHTML = `<option value="">— Select Employee —</option>` +
+    filtered.map(e=>`<option value="${e.id}">${e.id} · ${e.name}</option>`).join("");
+  selEl.value = filtered.find(e=>e.id===saved) ? saved : "";
+  onSalEmpChange();
+  renderSalaryTable(filtered);
+}
+function onSalEmpChange() {
+  const id = document.getElementById("sal-emp-select").value;
+  document.getElementById("sal-add-btn").disabled = !id;
+  const prev = document.getElementById("sal-emp-preview");
+  if(!id){ prev.innerHTML=""; return; }
+  const emp = employees.find(e=>e.id===id);
+  const dept = getDept(emp.deptId), stn = getStation(emp.stationId);
+  const mult = stn ? MULTIPLIERS[stn.type] : 1;
+  const gross= calcSalary(emp);
+  const net  = gross - Math.round(gross*.12) - Math.round(gross*.0175) - Math.round(gross*.05);
+  prev.innerHTML = `
+    <div class="emp-preview">
+      <div class="ep-head">
+        <div><div class="ep-name">${emp.name}</div><div class="ep-sub">${emp.id} · ${dept?.name} · ${stn?.name}</div></div>
+        <div><div class="ep-net-lbl">Net Pay</div><div class="ep-net-val">${fmtINR(net)}</div></div>
+      </div>
+      <div class="ep-stats">
+        ${[["Base Pay",fmtINR(dept?.basePay??0),"#0056b3"],
+           [`×${mult.toFixed(1)} (${stn?.type})`,stn?.type??'—',"#8B5CF6"],
+           ["Gross",fmtINR(gross),"#001f3f"],
+           ["Net Pay",fmtINR(net),"#10B981"]]
+          .map(([l,v,c])=>`<div class="ep-stat" style="background:${hex2rgba(c,.07)}">
+            <div class="ep-stat-val" style="color:${c}">${v}</div>
+            <div class="ep-stat-lbl">${l}</div></div>`).join("")}
+      </div>
+    </div>`;
+}
+function openSlipFromSalary() {
+  const id = document.getElementById("sal-emp-select").value;
+  if(id) openSlipModal(id);
+}
+function renderSalaryTable(filtered) {
+  document.getElementById("sal-tbl-cnt").textContent = `${filtered.length} employees`;
+  document.getElementById("sal-tbody").innerHTML = filtered.slice(0,20).map((emp,i)=>{
+    const dept  = getDept(emp.deptId), stn = getStation(emp.stationId);
+    const mult  = stn ? MULTIPLIERS[stn.type] : 1;
+    const gross = calcSalary(emp);
+    return `<tr style="cursor:pointer" onclick="document.getElementById('sal-emp-select').value='${emp.id}';onSalEmpChange()">
+      <td><span class="id-badge">${emp.id}</span></td>
+      <td style="font-weight:700;color:#1e293b">${emp.name}</td>
+      <td><span class="dept-pill" style="background:${hex2rgba(dept?.color??'#64748b',.12)};color:${dept?.color??'#64748b'}">
+        <span class="pill-dot" style="background:${dept?.color}"></span>${dept?.name}</span></td>
+      <td style="font-weight:600;color:#475569">${fmtINR(dept?.basePay??0)}</td>
+      <td><span class="type-badge">${mult.toFixed(1)}× ${stn?.type}</span></td>
+      <td style="font-weight:900;color:#001f3f">${fmtINR(gross)}</td>
+    </tr>`;
+  }).join("");
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+loadAllData(); // fetch from real DB
+document.querySelectorAll(".nav-chevron").forEach((c,i)=>{ if(i!==0) c.style.display="none"; });
+</script>
+</body>
+</html>

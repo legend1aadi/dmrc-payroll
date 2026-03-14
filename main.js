@@ -15,7 +15,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname)); // serves index2.html from same folder
-
+app.get('/', (req, res) => {
+  res.sendFile(new URL('./index2.html', import.meta.url).pathname);
+});
 // ── DATABASE CONNECTION ────────────────────────────────────────────────────
 const db = await mysql.createConnection({
   host:     'yamabiko.proxy.rlwy.net',

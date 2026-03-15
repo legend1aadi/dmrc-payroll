@@ -20,11 +20,11 @@ app.get('/', (req, res) => {
 });
 // ── DATABASE CONNECTION ────────────────────────────────────────────────────
 const db = await mysql.createConnection({
-  host:     'yamabiko.proxy.rlwy.net',
-  user:     'root',
-  port:     16086,
-  password: 'bQqtpwdNOgPYgcVbbsTMcNxkCrAzDOou',
-  database: 'dmrc_payroll',
+  host:     'sql12.freesqldatabase.com',
+  user:     'sql12820086',
+  port:     3306,
+  password: 'H17Sgvsxxl',
+  database: 'sql12820086',
 });
 console.log('✅ Database connected successfully');
 

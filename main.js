@@ -1,40 +1,43 @@
 import express  from 'express';
 import mysql    from 'mysql2/promise';
 import cors     from 'cors';
+import dotenv   from 'dotenv';
 import path     from 'path';
 import { fileURLToPath } from 'url';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 const app  = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // ── MIDDLEWARE ─────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname)); // serves index2.html from same folder
+app.use(express.static(__dirname));
 app.get('/', (req, res) => {
   res.sendFile(new URL('./index2.html', import.meta.url).pathname);
 });
+
 // ── DATABASE CONNECTION ────────────────────────────────────────────────────
 const db = await mysql.createConnection({
-  host:     'sql12.freesqldatabase.com',
-  user:     'sql12820086',
-  port:     3306,
-  password: 'H17Sgvsxxl',
-  database: 'sql12820086',
+  host:     process.env.DB_HOST,
+  user:     process.env.DB_USER,
+  port:     parseInt(process.env.DB_PORT),
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  ssl:      { rejectUnauthorized: false }
 });
 console.log('✅ Database connected successfully');
 
 
 // ════════════════════════════════════════════════════════════════
 //  EMPLOYEES  →  Employee_Info table
-//  Columns: emp_id, full_name, dob, contact_no, dept_id, station_id
 // ════════════════════════════════════════════════════════════════
 
-// GET all employees
 app.get('/api/employees', async (req, res) => {
   try {
     const [rows] = await db.execute(`
@@ -54,7 +57,6 @@ app.get('/api/employees', async (req, res) => {
   }
 });
 
-// GET single employee by ID
 app.get('/api/employees/:id', async (req, res) => {
   try {
     const [rows] = await db.execute(`
@@ -76,7 +78,6 @@ app.get('/api/employees/:id', async (req, res) => {
   }
 });
 
-// ADD new employee
 app.post('/api/employees', async (req, res) => {
   const { id, name, dob, contact_no, deptId, stationId } = req.body;
   try {
@@ -91,7 +92,6 @@ app.post('/api/employees', async (req, res) => {
   }
 });
 
-// UPDATE employee
 app.put('/api/employees/:id', async (req, res) => {
   const { name, dob, contact_no, deptId, stationId } = req.body;
   try {
@@ -107,13 +107,11 @@ app.put('/api/employees/:id', async (req, res) => {
   }
 });
 
-// DELETE employee
 app.delete('/api/employees/:id', async (req, res) => {
   try {
-    // Delete related payroll records first (foreign key safety)
-    await db.execute(`DELETE FROM Payroll_Final WHERE emp_id = ?`, [req.params.id]);
+    await db.execute(`DELETE FROM Payroll_Final   WHERE emp_id = ?`, [req.params.id]);
     await db.execute(`DELETE FROM attendance_logs WHERE emp_id = ?`, [req.params.id]);
-    await db.execute(`DELETE FROM Employee_Info WHERE emp_id = ?`, [req.params.id]);
+    await db.execute(`DELETE FROM Employee_Info   WHERE emp_id = ?`, [req.params.id]);
     res.json({ success: true });
   } catch (err) {
     console.error('❌ DELETE /api/employees/:id:', err.message);
@@ -124,17 +122,15 @@ app.delete('/api/employees/:id', async (req, res) => {
 
 // ════════════════════════════════════════════════════════════════
 //  DEPARTMENTS  →  Departments table
-//  Columns: dept_id, dept_name, base_salary, ot_rate_hourly
 // ════════════════════════════════════════════════════════════════
 
-// GET all departments
 app.get('/api/departments', async (req, res) => {
   try {
     const [rows] = await db.execute(`
       SELECT
-        dept_id       AS id,
-        dept_name     AS name,
-        base_salary   AS basePay,
+        dept_id        AS id,
+        dept_name      AS name,
+        base_salary    AS basePay,
         ot_rate_hourly AS otRate
       FROM Departments
     `);
@@ -145,7 +141,6 @@ app.get('/api/departments', async (req, res) => {
   }
 });
 
-// ADD department
 app.post('/api/departments', async (req, res) => {
   const { id, name, basePay, otRate } = req.body;
   try {
@@ -160,7 +155,6 @@ app.post('/api/departments', async (req, res) => {
   }
 });
 
-// UPDATE department
 app.put('/api/departments/:id', async (req, res) => {
   const { name, basePay, otRate } = req.body;
   try {
@@ -179,18 +173,16 @@ app.put('/api/departments/:id', async (req, res) => {
 
 // ════════════════════════════════════════════════════════════════
 //  STATIONS  →  Stations table
-//  Columns: station_id, station_name, station_type, allowance_multiplier, line
 // ════════════════════════════════════════════════════════════════
 
-// GET all stations
 app.get('/api/stations', async (req, res) => {
   try {
     const [rows] = await db.execute(`
       SELECT
-        station_id            AS id,
-        station_name          AS name,
-        station_type          AS type,
-        allowance_multiplier  AS multiplier,
+        station_id           AS id,
+        station_name         AS name,
+        station_type         AS type,
+        allowance_multiplier AS multiplier,
         line
       FROM Stations
     `);
@@ -204,10 +196,8 @@ app.get('/api/stations', async (req, res) => {
 
 // ════════════════════════════════════════════════════════════════
 //  PAYROLL  →  Payroll_Final table
-//  Columns: payroll_id, emp_id, month_year, gross_salary, net_salary, calculation_date
 // ════════════════════════════════════════════════════════════════
 
-// GET all payroll records (with employee name joined)
 app.get('/api/payroll', async (req, res) => {
   try {
     const [rows] = await db.execute(`
@@ -230,7 +220,6 @@ app.get('/api/payroll', async (req, res) => {
   }
 });
 
-// GET payroll for a specific employee
 app.get('/api/payroll/:empId', async (req, res) => {
   try {
     const [rows] = await db.execute(`
@@ -245,7 +234,6 @@ app.get('/api/payroll/:empId', async (req, res) => {
   }
 });
 
-// ADD payroll record
 app.post('/api/payroll', async (req, res) => {
   const { payroll_id, emp_id, month_year, gross_salary, net_salary } = req.body;
   try {
@@ -263,10 +251,8 @@ app.post('/api/payroll', async (req, res) => {
 
 // ════════════════════════════════════════════════════════════════
 //  ATTENDANCE  →  attendance_logs table
-//  Columns: log_id, emp_id, month_year, days_worked, ot_hours, leaves_taken
 // ════════════════════════════════════════════════════════════════
 
-// GET all attendance logs (with employee name)
 app.get('/api/attendance', async (req, res) => {
   try {
     const [rows] = await db.execute(`
@@ -289,7 +275,6 @@ app.get('/api/attendance', async (req, res) => {
   }
 });
 
-// GET attendance for specific employee
 app.get('/api/attendance/:empId', async (req, res) => {
   try {
     const [rows] = await db.execute(`
@@ -304,7 +289,6 @@ app.get('/api/attendance/:empId', async (req, res) => {
   }
 });
 
-// ADD attendance record
 app.post('/api/attendance', async (req, res) => {
   const { log_id, emp_id, month_year, days_worked, ot_hours, leaves_taken } = req.body;
   try {
@@ -319,7 +303,6 @@ app.post('/api/attendance', async (req, res) => {
   }
 });
 
-// UPDATE attendance record
 app.put('/api/attendance/:logId', async (req, res) => {
   const { days_worked, ot_hours, leaves_taken } = req.body;
   try {
@@ -338,10 +321,8 @@ app.put('/api/attendance/:logId', async (req, res) => {
 
 // ════════════════════════════════════════════════════════════════
 //  USERS  →  users table
-//  Columns: email_id, password
 // ════════════════════════════════════════════════════════════════
 
-// LOGIN check
 app.post('/api/login', async (req, res) => {
   const { email_id, password } = req.body;
   try {
@@ -356,7 +337,6 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// REGISTER new user
 app.post('/api/register', async (req, res) => {
   const { email_id, password } = req.body;
   try {
@@ -372,7 +352,7 @@ app.post('/api/register', async (req, res) => {
 
 
 // ════════════════════════════════════════════════════════════════
-//  DASHBOARD SUMMARY  →  combined stats in one call
+//  DASHBOARD SUMMARY
 // ════════════════════════════════════════════════════════════════
 
 app.get('/api/summary', async (req, res) => {
@@ -381,7 +361,6 @@ app.get('/api/summary', async (req, res) => {
     const [[{ totalDepts }]]     = await db.execute(`SELECT COUNT(*) AS totalDepts FROM Departments`);
     const [[{ totalStations }]]  = await db.execute(`SELECT COUNT(*) AS totalStations FROM Stations`);
     const [[{ totalPayroll }]]   = await db.execute(`SELECT IFNULL(SUM(net_salary),0) AS totalPayroll FROM Payroll_Final`);
-
     res.json({ totalEmployees, totalDepts, totalStations, totalPayroll });
   } catch (err) {
     console.error('❌ GET /api/summary:', err.message);
@@ -394,21 +373,4 @@ app.get('/api/summary', async (req, res) => {
 app.listen(port, () => {
   console.log(`\n🚀 Server running at http://localhost:${port}`);
   console.log(`🌐 Open dashboard at http://localhost:${port}/index2.html\n`);
-  console.log('📡 Available API endpoints:');
-  console.log('   GET    /api/employees');
-  console.log('   POST   /api/employees');
-  console.log('   PUT    /api/employees/:id');
-  console.log('   DELETE /api/employees/:id');
-  console.log('   GET    /api/departments');
-  console.log('   GET    /api/stations');
-  console.log('   GET    /api/payroll');
-  console.log('   GET    /api/payroll/:empId');
-  console.log('   POST   /api/payroll');
-  console.log('   GET    /api/attendance');
-  console.log('   GET    /api/attendance/:empId');
-  console.log('   POST   /api/attendance');
-  console.log('   PUT    /api/attendance/:logId');
-  console.log('   POST   /api/login');
-  console.log('   POST   /api/register');
-  console.log('   GET    /api/summary');
 });

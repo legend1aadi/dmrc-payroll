@@ -1,11 +1,8 @@
 import express  from 'express';
 import mysql    from 'mysql2/promise';
 import cors     from 'cors';
-import dotenv   from 'dotenv';
 import path     from 'path';
 import { fileURLToPath } from 'url';
-
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -24,12 +21,11 @@ app.get('/', (req, res) => {
 
 // ── DATABASE CONNECTION ────────────────────────────────────────────────────
 const db = await mysql.createConnection({
-  host:     process.env.DB_HOST,
-  user:     process.env.DB_USER,
-  port:     parseInt(process.env.DB_PORT),
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  ssl:      { rejectUnauthorized: false }
+  host:     'hopper.proxy.rlwy.net',
+  user:     'root',
+  port:     20428,
+  password: 'vFLanVOiuAqehlngjGIjGHQhcFkgPIRm',
+  database: 'railway',
 });
 console.log('✅ Database connected successfully');
 
